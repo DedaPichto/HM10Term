@@ -19,7 +19,8 @@
  * Motorola Nexus 6, Android 7.0 - не в порядке
  * LGE Nexus 5X, Android 7.0 - не в порядке
  * Samsung S9 SM-G960F - не в порядке
- и т.д.
+
+и т.д.
 
 Поддерживается Android с его 4.1-4.3startLeScan()
 
