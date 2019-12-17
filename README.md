@@ -11,6 +11,11 @@
 
 Особенность программы -- запрашивается доступ к Location. Даже не запрашивается, а спрашивается,
  есть ли доступ? Если этого не сделать, у ряда устройств не будет доступа к поиску BLE устройств.
- В частности, у новых Samsung'ов и Xiaome. (см. EnableLocation и эту дискуссию https://github.com/Polidea/RxAndroidBle/issues/106)
-startLeScan() вписывать сюда не стал. Весма маловероятно, что кто-то захочет добавлять поддержку 4.1<>4.3 Android. 
-Да и готовых примеров полно.
+ За решение спасибо https://github.com/kai-morich, с его лучшим терминалом https://github.com/kai-morich/SimpleBluetoothLeTerminal
+ В частности, у новых Samsung'ов и LG. (см. EnableLocation и эту дискуссию https://github.com/Polidea/RxAndroidBle/issues/106)
+ * Motorola Nexus 6, Android 7.0 - не в порядке
+ * LGE Nexus 5X, Android 7.0 - не в порядке
+ * Samsung S9 SM-G960F - не в порядке
+ и т.д.
+Поддерживается Android с его 4.1-4.3startLeScan()
+
