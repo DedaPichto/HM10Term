@@ -13,6 +13,20 @@
 есть ли доступ? Если этого не сделать, у ряда устройств не будет доступа к поиску BLE устройств.
 Не знаю, есть ли ещё какое-то решение. Пока, это -- единственное.
 
+    private void enableLocation()
+    {
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);// getActivity().getSystemService(Context.LOCATION_SERVICE);
+        boolean  locationEnabled = false;
+        try {
+            locationEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        } catch(Exception ignored) {}
+        try {
+            locationEnabled |= locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        } catch(Exception ignored) {}
+        if(!locationEnabled)
+            scanState = ScanState.DISCOVERY;
+    }
+
 За решение спасибо https://github.com/kai-morich, с его лучшим терминалом https://github.com/kai-morich/SimpleBluetoothLeTerminal
 
 В частности, у новых Samsung'ов и LG. (см. EnableLocation и эту дискуссию https://github.com/Polidea/RxAndroidBle/issues/106)
