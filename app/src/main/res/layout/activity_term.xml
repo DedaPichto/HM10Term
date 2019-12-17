@@ -35,24 +35,6 @@
             android:text="@string/default_device_address" />
 
         <LinearLayout
-            android:id="@+id/LLPower"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/TVLabelPower"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/label_power" />
-
-            <TextView
-                android:id="@+id/TVPower"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
-
-        <LinearLayout
             android:id="@+id/LLSend"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -76,12 +58,13 @@
 
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/TVLog"
+        <EditText
+            android:id="@+id/ETLog"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="10"
-            android:singleLine="false" />
+            android:ems="10"
+            android:gravity="start|top"
+            android:inputType="textMultiLine" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

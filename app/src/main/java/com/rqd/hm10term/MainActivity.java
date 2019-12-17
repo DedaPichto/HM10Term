@@ -4,10 +4,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 // import android.support.v7.app.AppCompatActivity;
+import android.annotation.TargetApi;
 import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanSettings;
 import android.location.LocationManager;
-import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.Manifest;
 import android.app.Activity;
@@ -38,8 +40,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.rqd.hm10term.R;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -51,81 +51,92 @@ public class MainActivity extends AppCompatActivity {
     private ScanState scanState = ScanState.NONE;
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int ACCESS_MY_PERMISSION = 1;
-    // Stops scanning after 10 seconds.
+    // Stops scanning after 5 seconds.
     private static final long SCAN_PERIOD = 5000;
     private boolean mScanning;
     private Handler mHandler;
     private BluetoothAdapter mBluetoothAdapter;
     private LeDeviceListAdapter mLeDeviceListAdapter;
     private ListView mLVDevices;
-    private LinearLayout mLLDevices;
-    private LinearLayout mLLScan;
     private ProgressBar mPBScan;
-    private String mDeviceName;
-    private String mDeviceAddress;
+    // Сканнеры. Старый и новый.
+    private OldLeScanCallback mOldLeScanCallback;
+    private NewLeScanCallback mNewLeScanCallback;
 
-    private BluetoothAdapter.LeScanCallback leScanCallback =
-            new BluetoothAdapter.LeScanCallback() {
+    /** Обратный вызов для устаревших версий Андроида 4.3 -//- 4.4.
+     * Работает медленно и иногда "теряет" устройства.
+     * Иногда приходится сканировать устройства несколько раз
+     */
+    private class OldLeScanCallback implements BluetoothAdapter.LeScanCallback {
+        @Override
+        public void onLeScan(final BluetoothDevice device, int rssi,  byte[] scanRecord) {
+            // https://developer.android.com/reference/java/lang/Runnable
+            runOnUiThread(new Runnable() {
                 @Override
-                public void onLeScan(final BluetoothDevice device, int rssi,
-                                     byte[] scanRecord) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            //leDeviceListAdapter.addDevice(device);
-                            // leDeviceListAdapter.notifyDataSetChanged();
-                            Log.w("LeScan", "LeScan");
-                            if(device != null) {
-                                Log.w("LeScan", device.getAddress());
-                                Log.w("LeScan", device.getName());
-                                mLeDeviceListAdapter.addDevice(device);
-                            }
-                        }
-                    });
-                }
-            };
-
-    // Обратный вызов сканирования устройств.
-    private ScanCallback mLeScanCallback =
-            new ScanCallback() {
-
-                @Override
-                public void onScanResult(int callbackType, ScanResult result) {
-                    // addDevice(result);
-                    // Date dNow = new Date();
-                    BluetoothDevice btDevice = result.getDevice();
-                    mLeDeviceListAdapter.addDevice(btDevice);
-                    mLeDeviceListAdapter.notifyDataSetChanged();
-                    // Log.w("onBatchScanResult", result.getDevice().getName() + " " + result.getRssi());
-                    // Log.w("onBatchScanResult", String.format("%d",dNow.getTime() - mMoment.getTime()));
-                    // mPBSearch.setProgress((int)(dNow.getTime() - mMoment.getTime()) / 100);
-                    super.onScanResult(callbackType, result);
-                }
-
-                @Override
-                public void onBatchScanResults(List<ScanResult> results) {
-                    Log.w("onBatchScanResults", "Вызов");
-                    // Date dNow = new Date();
-                    for(ScanResult result : results) {
-                        BluetoothDevice btDevice = result.getDevice();
-                        mLeDeviceListAdapter.addDevice(btDevice);
+                public void run() {
+                    Log.w("LeScan", "LeScan");
+                    if(device != null) {
+                        Log.w(LOG_TAG, "Find device " + device.getName() + "(" + device.getAddress()+ ")");
+                        mLeDeviceListAdapter.addDevice(device);
                         mLeDeviceListAdapter.notifyDataSetChanged();
                     }
-                    // mPBSearch.setProgress((int)(dNow.getTime() - mMoment.getTime()) / 100);
-                    // Вызываем родительский метод
-                    super.onBatchScanResults(results);
                 }
+            });
+        }
+    }
 
-                @Override
-                public void onScanFailed(int errorCode) {
-                    Log.w("onScanFailed", "Error: " + errorCode);
-                    super.onScanFailed(errorCode);
-                }
+    /** Это обновлённая версия сканнера BLE-устройств, начиная с 5.0
+     * LOLLIPOP.
+     * https://developer.android.com/reference/android/bluetooth/le/ScanCallback
+     */
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private class NewLeScanCallback extends ScanCallback {
+        @Override
+        public void onScanResult(int callbackType, ScanResult result) {
+            BluetoothDevice device = result.getDevice();
+            // int rssi = result.getRssi();
+            // ScanRecord scanRecord = result.getScanRecord();
+            // byte[] record = scanRecord.getBytes();
+            Log.w(LOG_TAG, "Find device " + device.getName() + "(" + device.getAddress()+ ")");
+            mLeDeviceListAdapter.addDevice(device);
+            mLeDeviceListAdapter.notifyDataSetChanged();
+        }
 
-            };
+        @Override
+        public void onBatchScanResults(List<ScanResult> results) {
+            Log.w("onBatchScanResults", "Вызов");
+            for(ScanResult result : results) {
+                BluetoothDevice btDevice = result.getDevice();
+                // int rssi = result.getRssi();
+                // ScanRecord scanRecord = result.getScanRecord();
+                // byte[] record = scanRecord.getBytes();
+                mLeDeviceListAdapter.addDevice(btDevice);
+                mLeDeviceListAdapter.notifyDataSetChanged();
+            }
+            // Вызываем родительский метод
+            super.onBatchScanResults(results);
+        }
+
+        @Override
+        public void onScanFailed(int errorCode) {
+            Log.w(LOG_TAG, "Error scan BLE: " + errorCode);
+            super.onScanFailed(errorCode);
+        }
+    }
 
     /** Функция включает Location
      * На новых телефонах без неё не будет работать BLE-поиск
+     * Начиная с Android 6.0 блютуз сканнер требует ACCESS_COARSE_LOCATION. Проблема в том, что
+     * в https://developer.android.com/guide/topics/connectivity/bluetooth-le
+     * ничего нет про то, что надо ещё подключить Location. Почему и зачем нужно
+     * включить Location -- неведомо. Однако, её надо хотя бы запросить. Иначе,
+     * некоторые модели телефонов наотрез отказываются сканировать BLE-устройства
+     * Причём, под Location понимается не только GPS, как «услугой определения местоположения»,
+     * но, сетевое обнаружение местоположения. Предполагается, что если не удастся включить
+     * Location, будем вызывать старый способ сканирования (4.1 -//- 4.3)
+     * Пока, не реализовано.
+     * Заимствовано из примера
+     * https://www.javatips.net/api/intro-to-ble-master/android_ble/app/src/main/java/com/yeokm1/bleintro/BLEHandler.java
      */
     private void enableLocation()
     {
@@ -139,63 +150,97 @@ public class MainActivity extends AppCompatActivity {
         } catch(Exception ignored) {}
         if(!locationEnabled)
             scanState = ScanState.DISCOVERY;
-        // Starting with Android 6.0 a bluetooth scan requires ACCESS_COARSE_LOCATION permission, but that's not all!
-        // LESCAN also needs enabled 'location services', whereas DISCOVERY works without.
-        // Most users think of GPS as 'location service', but it includes more, as we see here.
-        // Instead of asking the user to enable something they consider unrelated,
-        // we fall back to the older API that scans for bluetooth classic _and_ LE
-        // sometimes the older API returns less results or slower
     }
 
     /** сканироване BLE устройств
-     *
+     * с учётом, того, какая версия Android установлена "на борту" телефона
      */
-    private void scanLeDevice() {
-        Log.w(LOG_TAG, "ScanLeDevice");
-        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);// getActivity().getSystemService(Context.LOCATION_SERVICE);
-        boolean  locationEnabled = false;
-        try {
-            locationEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        } catch(Exception ignored) {}
-        try {
-            locationEnabled |= locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-        } catch(Exception ignored) {}
-        if(!locationEnabled)
-            scanState = ScanState.DISCOVERY;
-        // Starting with Android 6.0 a bluetooth scan requires ACCESS_COARSE_LOCATION permission, but that's not all!
-        // LESCAN also needs enabled 'location services', whereas DISCOVERY works without.
-        // Most users think of GPS as 'location service', but it includes more, as we see here.
-        // Instead of asking the user to enable something they consider unrelated,
-        // we fall back to the older API that scans for bluetooth classic _and_ LE
-        // sometimes the older API returns less results or slower
-
+    private void scanLeDevice(boolean enable) {
+        Log.w(LOG_TAG, "ScanLeDevices");
+        checkPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
+        checkPermission(Manifest.permission.BLUETOOTH);
+        checkPermission(Manifest.permission.BLUETOOTH_ADMIN);
+        /* Вызываем эту функцию, просто, чтобы активировать Позиционирование
+         * Если этого не сделать, некоторые модели телефонов откажутся сканировать
+         * BLE-устройства
+         */
+        enableLocation();
         final BluetoothLeScanner bluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
-        if (mScanning) {
-            List<ScanFilter> filters = new ArrayList<ScanFilter>();
-            ScanFilter filter = new ScanFilter.Builder().setServiceUuid(new ParcelUuid(UUID.fromString(getString(R.string.ble_uuid)))).build();
-            filters.add(filter);
-            // https://developer.android.com/reference/android/bluetooth/le/ScanSettings
-            // ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT).build();
-            ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
-            // Остановить сканирование по истечении SCAN_PERIOD
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    mScanning = false;
-                    bluetoothLeScanner.stopScan(mLeScanCallback);
-                    invalidateOptionsMenu();
-                    mLLScan.setVisibility(View.INVISIBLE);
+        /* Определяем, какая версия Андроида стоит "на борту". Если старше
+         * 5.1 -- LOLLIPOP, вызываем "новую" библиотеку сканирования BLE
+         * Суть в том, что мы формируем Создаём объект ScanCallback, а потом вызываем при помощи
+         * mBluetoothAdapter.getBluetoothLeScanner()
+         * bluetoothLeScanner.stopScan(mNewLeScanCallback); или
+         * bluetoothLeScanner.startScan(mNewLeScanCallback);
+         * Не забываем создать объекты mOldLeScanCallBack или mNewLeScanCallBack
+         */
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (enable) {
+                /* Если mNewLeScanCallback не определён, создаём объект */
+                if(mNewLeScanCallback == null) {
+                    mNewLeScanCallback = new NewLeScanCallback();
                 }
-            }, SCAN_PERIOD);
 
-            mScanning = true;
-            bluetoothLeScanner.startScan(filters, settings, mLeScanCallback);
+                /* Если процесс сканирования был запущен, останавливаем его*/
+                if (mScanning) {
+                    bluetoothLeScanner.stopScan(mNewLeScanCallback);
+                    mScanning = false;
+                }
+
+                /*
+                 * Определяем список фильтров сканирования. Пока, он только один --
+                 * UUID Bluetooth cc2541
+                 * http://www.ti.com/lit/ds/symlink/cc2541.pdf
+                 * https://developer.android.com/reference/android/bluetooth/le/ScanFilter
+                 */
+                List<ScanFilter> filters = new ArrayList<ScanFilter>();
+                ScanFilter filter = new ScanFilter.Builder().setServiceUuid(new ParcelUuid(UUID.fromString(BLENameResolver.SERVICE_HM10))).build();
+                filters.add(filter);
+                // https://developer.android.com/reference/android/bluetooth/le/ScanSettings
+                // ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT).build();
+                ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
+                // Остановить сканирование по истечении SCAN_PERIOD. Время "сна" не учитывается
+                // https://developer.android.com/reference/java/lang/Runnable
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        mScanning = false;
+                        bluetoothLeScanner.stopScan(mNewLeScanCallback);
+                    }
+                }, SCAN_PERIOD);
+
+                mScanning = true;
+                // https://developer.android.com/reference/android/bluetooth/le/BluetoothLeScanner
+                bluetoothLeScanner.startScan(filters, settings, mNewLeScanCallback);
+            } else {
+                // Прекратить сканирование, если mScanning установлено в значение false
+                bluetoothLeScanner.stopScan(mNewLeScanCallback);
+                mScanning = false;
+            }
         } else {
-            // Прекратить сканирование, если mScanning установлено в значение false
-            mScanning = false;
-            bluetoothLeScanner.stopScan(mLeScanCallback);
+            if(mOldLeScanCallback == null) {
+                mOldLeScanCallback = new OldLeScanCallback();
+            }
+            UUID [] uuids = new UUID[1];
+            uuids [0] = UUID.fromString(BLENameResolver.SERVICE_HM10);
+            if(enable) {
+                // Если сканирование уже запущено, останавливаем его
+                if(mScanning) {
+                    mBluetoothAdapter.stopLeScan(mOldLeScanCallback);
+                }
+                // Вызов со своеобразным "фильтром"
+                mBluetoothAdapter.startLeScan(uuids, mOldLeScanCallback);
+                mScanning = true;
+            } else {
+                mBluetoothAdapter.stopLeScan(mOldLeScanCallback);
+                mScanning = false;
+            }
         }
 
+        /* Обновляем меню: если запущен процесс сканирования, убираем меню scan
+         * Если процесс сканирования остановлен, убираем меню stop и включаем stop
+         * Этот вызов обрабатывается в onCreateOptionsMenu()
+         */
         invalidateOptionsMenu();
     }
 
@@ -220,8 +265,12 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    /*
+    /** Адаптер ListView.
      * http://startandroid.ru/ru/uroki/vse-uroki-spiskom/113-urok-54-kastomizatsija-spiska-sozdaem-svoj-adapter.html
+     * Штука удобная -- его можно заполнять различными activity. Главное, переопределить набор
+     * обязательных методов. В этом же классе храним список добавленных устройств.
+     * Громоздко, но так проще...
+     * См. https://developer.android.com/reference/android/widget/BaseAdapter
      */
     class LeDeviceListAdapter extends BaseAdapter {
         public ArrayList<BluetoothDevice> mLeDevices;
@@ -234,7 +283,7 @@ public class MainActivity extends AppCompatActivity {
 
         public void addDevice(BluetoothDevice device) {
             if(mLeDevices.contains(device)) {
-                Log.w("LeDeviceListAdapter", "fail add device " + device.getAddress() + " " + device.getName() + ", " + mLeDevices.size());
+                Log.w(LOG_TAG, "Device already exists: " + device.getAddress() + " " + device.getName() + ", " + mLeDevices.size());
                 if(mLeDevices.size() > 0) {
                     Log.w("mLeDevices", mLeDevices.get(0).getAddress() + " " + mLeDevices.get(0).getName());
                 }
@@ -259,6 +308,15 @@ public class MainActivity extends AppCompatActivity {
             return i;
         }
 
+        /** Здесь и происходит "привязывание" соответствующего XML-описания
+         * активности. В данном случае, это device_item (см. ./res/layout/device_item
+         * Из структуры вызова видно, что можно заполнять список разными шаблонами
+         * отображения, что может быть очень удобно.
+         * @param i
+         * @param cView
+         * @param viewGroup
+         * @return
+         */
         @Override
         public View getView(int i, View cView, ViewGroup viewGroup) {
             View view = cView;
@@ -305,37 +363,33 @@ public class MainActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.menu_scan:
                 mLeDeviceListAdapter.clear();
-                if(mScanning) {
-                    mScanning = false;
-                    scanLeDevice();
-                } else {
-                    mScanning = true;
-                    scanLeDevice();
-                }
-                mLLScan.setVisibility(View.VISIBLE);
-                return super.onOptionsItemSelected(item);
+                scanLeDevice(true);
+                break;
             case R.id.menu_stop:
-                if(mScanning) {
-                    mScanning = false;
-                    scanLeDevice();
-                    mLLScan.setVisibility(View.INVISIBLE);
-                }
-                return super.onOptionsItemSelected(item);
+                scanLeDevice(false);
+                break;
             default:
-                return super.onOptionsItemSelected(item);
+                break;
         }
 
-        // return super.onOptionsItemSelected(item);
+        return super.onOptionsItemSelected(item);
     }
 
+    /** Без вызовов onPause() & onResume() при повороте экрана или "засыпании"
+     * В процессе сканирования вы будете получать ошибку обращения к нулевому
+     * объекту.
+     */
     @Override
     protected void onPause() {
         super.onPause();
-        mScanning = false;
-        scanLeDevice();
+        scanLeDevice(false);
         mLeDeviceListAdapter.clear();
     }
 
+    /** Без вызовов onPause() & onResume() при повороте экрана или "засыпании"
+     * В процессе сканирования вы будете получать ошибку обращения к нулевому
+     * объекту.
+     */
     @Override
     protected void onResume() {
         mScanning = true;
@@ -351,11 +405,11 @@ public class MainActivity extends AppCompatActivity {
         // Initializes list view adapter.
         mLeDeviceListAdapter = new LeDeviceListAdapter();
         mLVDevices.setAdapter(mLeDeviceListAdapter);
-        scanLeDevice();
+        scanLeDevice(true);
     }
 
-    /*
-     * Слушаем выбор элементов
+    /* "Слушаем" клик по элементу в списке. Если кто-то кликнут, переходим в следующую
+     * активность и пытаемся подключиться к выбранному устройству
      * https://stackoverflow.com/questions/4709870/setonitemclicklistener-on-custom-listview
      * http://startandroid.ru/ru/uroki/vse-uroki-spiskom/85-urok-44-sobytija-v-listview.html
      */
@@ -363,17 +417,19 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onItemClick (AdapterView< ? > adapter, View view, int position, long arg){
             BluetoothDevice device = (BluetoothDevice) mLeDeviceListAdapter.getItem(position);
-            final Intent intent = new Intent(MainActivity.this, BallActivity.class);
+            final Intent intent = new Intent(MainActivity.this, TermActivity.class);
+            /* Запоминаем имя и адрес выбранного устройства в предстоящий intent
+             * при помощи метода putExtra()
+             * https://developer.android.com/reference/android/content/Intent
+             */
             intent.putExtra("device_name", device.getName());
             intent.putExtra("device_address", device.getAddress());
             if (mScanning) {
-                // mBluetoothAdapter.stopLeScan(mLeScanCallback);
-                mScanning = false;
+                scanLeDevice(false);
             }
             // http://startandroid.ru/ru/uroki/vse-uroki-spiskom/67-urok-28-extras-peredaem-dannye-s-pomoschju-intent.html
-            mDeviceName = intent.getStringExtra("device_name");
-            mDeviceAddress = intent.getStringExtra("device_address");
             Log.w("Frequency: ", "Device: " + device.getName() + ", Address: " + device.getAddress());
+            // Всё. Запускаем следующую активность и пробуем подключиться к устройству
             startActivity(intent);
         }
     };
@@ -387,10 +443,9 @@ public class MainActivity extends AppCompatActivity {
         checkPermission(Manifest.permission.BLUETOOTH_ADMIN);
         setContentView(R.layout.activity_main);
         mHandler = new Handler();
+        mLeDeviceListAdapter = new LeDeviceListAdapter();
         mLVDevices = findViewById(R.id.LVDevices);
         mLVDevices.setOnItemClickListener(mLVItemClick);
-        mLLDevices = findViewById(R.id.LLDevices);
-        mLLScan = findViewById(R.id.LLScan);
         mPBScan = findViewById(R.id.PBScan);
         // Use this check to determine whether BLE is supported on the device.  Then you can
         // selectively disable BLE-related features.

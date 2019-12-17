@@ -29,11 +29,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.rqd.hm10term.R;
-
-public class BallActivity extends AppCompatActivity {
+public class TermActivity extends AppCompatActivity {
     // Тэг для отметки вывода отладки
-    protected String LOG_TAG = BallActivity.class.getName();
+    protected String LOG_TAG = TermActivity.class.getName();
     // Разрешение
     private static final int ACCESS_MY_PERMISSION = 1;
     // Имя выбранного устройства
@@ -57,9 +55,7 @@ public class BallActivity extends AppCompatActivity {
     // Кнопка отправки данных
     private Button btnSend = null;
     // Лог обмена данными
-    private TextView TVLog = null;
-    // Уровень зарядки
-    private TextView tvPower = null;
+    private EditText ETLog = null;
     // Слой с SeekBar'ом, отображающим процесс подключения к устройству
     private LinearLayout llConnect = null;
 
@@ -100,9 +96,8 @@ public class BallActivity extends AppCompatActivity {
         tvDeviceAddress = findViewById(R.id.TVDeviceAddress);
         etSend = findViewById(R.id.ETSend);
         btnSend = findViewById(R.id.BTNSend);
-        TVLog = findViewById(R.id.TVLog);
+        ETLog = findViewById(R.id.ETLog);
         llConnect = findViewById(R.id.LLConnect);
-        tvPower = findViewById(R.id.TVPower);
 
         /** Отправляем команду из строки etSend
          *
@@ -115,7 +110,7 @@ public class BallActivity extends AppCompatActivity {
                         Log.w(LOG_TAG, String.format("Send command: %s", strCommand));
 //                      Pattern p = Pattern.compile("p(\d+)");
 //                      Matcher m = p.matcher(strCommand);
-                        TVLog.append(strCommand + "\n");
+                        ETLog.append(strCommand + "\n");
                         etSend.setText("");
                     }
                 }
@@ -169,27 +164,6 @@ public class BallActivity extends AppCompatActivity {
                 // value = intent.getIntExtra(BluetoothLeService.PARAM_VALUE, -1);
                 String value = intent.getStringExtra(BLEService.PARAM_VALUE);
                 Log.w("BroadcastReceiver", "Name: " + name + ", Value: " + value);
-                if(name.equals("reply")) {
-                    if(value.charAt(0) == 'p') {
-                        tvPower.setText(value.substring(1));
-                    } else {
-                        TVLog.append(value + "\n");
-                    }
-                }
-//                if(name.equals("frequency")) {
-//                    // mSBFreq.setProgress(value);
-//                } else if(name.equals("fill")) {
-//                    // mSBFill.setProgress(value);
-//                } else if(name.equals("sleep")) {
-//                    // mSBSleep.setProgress(value);
-//                } else if(name.equals("state")) {
-//                    mEnabled = value == 0 ? false : true;
-//                    changeBtnState();
-//                } else if(name.equals("connected")) {
-//                    Log.w("BroadCastReceiver", "Name: " + name + ", Value: " + value);
-//                    // mDeviceConnected = (value == 0) ? false : true;
-//                    updateConnectionState();
-//                }
             }
         }
     };
@@ -318,7 +292,7 @@ public class BallActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_ball);
+        setContentView(R.layout.activity_term);
         // Запрашиваем нужные разрешения доступа к BLUETOOTH и Геопозиционированию
         checkPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
         checkPermission(Manifest.permission.BLUETOOTH);
@@ -360,7 +334,7 @@ public class BallActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.activity_ball, menu);
+        getMenuInflater().inflate(R.menu.activity_term, menu);
         if (mConnected) {
             menu.findItem(R.id.menu_connect).setVisible(false);
             menu.findItem(R.id.menu_disconnect).setVisible(true);
@@ -388,7 +362,7 @@ public class BallActivity extends AppCompatActivity {
                 return true;
             case R.id.menu_scan:
             {
-                final Intent intent = new Intent(BallActivity.this, MainActivity.class);
+                final Intent intent = new Intent(TermActivity.this, MainActivity.class);
                 {
                     mBluetoothLeService.disconnect();
                     unbindService(mServiceConnection);

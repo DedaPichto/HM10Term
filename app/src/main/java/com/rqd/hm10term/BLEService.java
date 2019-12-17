@@ -93,18 +93,18 @@ public class BLEService extends Service {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                BluetoothGattService serviceHM10 = gatt.getService(UUID.fromString(BLEServiceNameResolver.SERVICE_HM10));
+                BluetoothGattService serviceHM10 = gatt.getService(UUID.fromString(BLENameResolver.SERVICE_HM10));
                 if(serviceHM10 != null) {
-                    mHM10characteristicRXTX = serviceHM10.getCharacteristic(UUID.fromString(BLEServiceNameResolver.CHARACTERISTIC_HM10_RXTX));
+                    mHM10characteristicRXTX = serviceHM10.getCharacteristic(UUID.fromString(BLENameResolver.CHARACTERISTIC_HM10_RXTX));
                     if(mHM10characteristicRXTX != null) {
                         BluetoothGattDescriptor descriptorConfig =
-                                mHM10characteristicRXTX.getDescriptor(UUID.fromString(BLEServiceNameResolver.DESCRIPTOR_HM10_CLIENT_CONFIG));
+                                mHM10characteristicRXTX.getDescriptor(UUID.fromString(BLENameResolver.DESCRIPTOR_HM10_CLIENT_CONFIG));
                         if(descriptorConfig != null) {
                             descriptorConfig.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
                             gatt.writeDescriptor(descriptorConfig);
                         }
                         BluetoothGattDescriptor descriptorUser =
-                                mHM10characteristicRXTX.getDescriptor(UUID.fromString(BLEServiceNameResolver.DESCRIPTOR_HM10_USER_DESCRIPTION));
+                                mHM10characteristicRXTX.getDescriptor(UUID.fromString(BLENameResolver.DESCRIPTOR_HM10_USER_DESCRIPTION));
                         if(descriptorUser != null) {
                             descriptorUser.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
                             gatt.writeDescriptor(descriptorUser);
@@ -129,17 +129,17 @@ public class BLEService extends Service {
             List<BluetoothGattService> services = gatt.getServices();
             for (BluetoothGattService service : services)
             {
-                if(service.getUuid().equals(UUID.fromString(BLEServiceNameResolver.SERVICE_HM10))) {
-                    Log.w("HM-10 Service", service.getUuid().toString() + " " + BLEServiceNameResolver.lookupService(service.getUuid().toString(), "Не опознан"));
+                if(service.getUuid().equals(UUID.fromString(BLENameResolver.SERVICE_HM10))) {
+                    Log.w("HM-10 Service", service.getUuid().toString() + " " + BLENameResolver.lookupService(service.getUuid().toString(), "Не опознан"));
                     List<BluetoothGattCharacteristic> characteristics = service.getCharacteristics();
                     for (BluetoothGattCharacteristic characteristic : characteristics) {
-                        if(characteristic.getUuid().equals(UUID.fromString(BLEServiceNameResolver.CHARACTERISTIC_HM10_RXTX))) {
-                            Log.w("HM-10 Characteristic", characteristic.getUuid().toString() + " " + BLEServiceNameResolver.lookupCharacteristic(characteristic.getUuid().toString(), "Не опознана"));
+                        if(characteristic.getUuid().equals(UUID.fromString(BLENameResolver.CHARACTERISTIC_HM10_RXTX))) {
+                            Log.w("HM-10 Characteristic", characteristic.getUuid().toString() + " " + BLENameResolver.lookupCharacteristic(characteristic.getUuid().toString(), "Не опознана"));
                             for (BluetoothGattDescriptor descriptor : characteristic.getDescriptors()) {
                                 descriptor.setValue( BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
                                 descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                                 gatt.writeDescriptor(descriptor);
-                                Log.w("HM-10 Descriptor", descriptor.getUuid().toString() + " " + BLEServiceNameResolver.lookupDescriptor(descriptor.getUuid().toString(), "Не опознан"));
+                                Log.w("HM-10 Descriptor", descriptor.getUuid().toString() + " " + BLENameResolver.lookupDescriptor(descriptor.getUuid().toString(), "Не опознан"));
                             }
                             gatt.setCharacteristicNotification(characteristic, true);
                         }
@@ -238,7 +238,7 @@ public class BLEService extends Service {
         final Intent intent = new Intent(action);
 
         // Log.w("broadcastUpdate()", BLEServiceNameResolver.lookupCharacteristic(characteristic.getUuid().toString(), "Не найдена характеристика"));
-        if(characteristic.getUuid().equals(UUID.fromString(BLEServiceNameResolver.CHARACTERISTIC_HM10_RXTX)))
+        if(characteristic.getUuid().equals(UUID.fromString(BLENameResolver.CHARACTERISTIC_HM10_RXTX)))
         {
             int flag = characteristic.getProperties();
             String strData = characteristic.getStringValue(0);

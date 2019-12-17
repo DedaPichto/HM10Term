@@ -6,7 +6,7 @@ import java.util.HashMap;
  * Created by denis on 25.03.18.
  */
 
-public class BLEServiceNameResolver {
+public class BLENameResolver {
     /*
      *   HM-10 Service: 0000ffe0-0000-1000-8000-00805f9b34fb HM-10
      *   HM-10 Characteristic: 0000ffe1-0000-1000-8000-00805f9b34fb HM RX/TX Service
