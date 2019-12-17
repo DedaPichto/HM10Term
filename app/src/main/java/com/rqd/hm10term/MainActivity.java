@@ -201,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         mScanning = false;
-                        bluetoothLeScanner.stopScan(mNewLeScanCallback);
+                        scanLeDevice(false);
                     }
                 }, SCAN_PERIOD);
 
@@ -345,6 +345,14 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
+    /** Обновление меню
+     * Каждое обращение invalidateOptionsMenu();
+     * вызывает перерисовку меню. Заодно, включаем
+     * и выключаем прогрессбар, в зависимости от того,
+     * запущен или остановлен процесс сканирования.
+     * @param menu
+     * @return
+     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.activity_main, menu);
@@ -355,6 +363,11 @@ public class MainActivity extends AppCompatActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
+    /** Вызов меню
+     *
+     * @param item
+     * @return
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -374,7 +387,8 @@ public class MainActivity extends AppCompatActivity {
 
     /** Без вызовов onPause() & onResume() при повороте экрана или "засыпании"
      * В процессе сканирования вы будете получать ошибку обращения к нулевому
-     * объекту.
+     * объекту. См. Жизненный цикл Активности
+     * https://developer.android.com/guide/components/activities/?hl=ru#Lifecycle
      */
     @Override
     protected void onPause() {
@@ -385,7 +399,8 @@ public class MainActivity extends AppCompatActivity {
 
     /** Без вызовов onPause() & onResume() при повороте экрана или "засыпании"
      * В процессе сканирования вы будете получать ошибку обращения к нулевому
-     * объекту.
+     * объекту. См. Жизненный Цикл Активности
+     * https://developer.android.com/guide/components/activities/?hl=ru#Lifecycle
      */
     @Override
     protected void onResume() {
