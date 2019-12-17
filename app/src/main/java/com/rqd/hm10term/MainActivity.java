@@ -78,15 +78,13 @@ public class MainActivity extends AppCompatActivity {
                     if(device != null) {
                         Log.w(LOG_TAG, "Find device " + device.getName() + "(" + device.getAddress()+ ")");
                         mLeDeviceListAdapter.addDevice(device);
-                        mLeDeviceListAdapter.notifyDataSetChanged();
                     }
                 }
             });
         }
     }
 
-    /** Это обновлённая версия сканнера BLE-устройств, начиная с 5.0
-     * LOLLIPOP.
+    /** Обновлённая версия сканнера BLE-устройств, начиная с 5.0 (LOLLIPOP)
      * https://developer.android.com/reference/android/bluetooth/le/ScanCallback
      */
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -99,7 +97,6 @@ public class MainActivity extends AppCompatActivity {
             // byte[] record = scanRecord.getBytes();
             Log.w(LOG_TAG, "Find device " + device.getName() + "(" + device.getAddress()+ ")");
             mLeDeviceListAdapter.addDevice(device);
-            mLeDeviceListAdapter.notifyDataSetChanged();
         }
 
         @Override
@@ -111,7 +108,6 @@ public class MainActivity extends AppCompatActivity {
                 // ScanRecord scanRecord = result.getScanRecord();
                 // byte[] record = scanRecord.getBytes();
                 mLeDeviceListAdapter.addDevice(btDevice);
-                mLeDeviceListAdapter.notifyDataSetChanged();
             }
             // Вызываем родительский метод
             super.onBatchScanResults(results);
@@ -290,6 +286,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 mLeDevices.add(device);
                 Log.w("LeDeviceListAdapter", "Add " + device.getName() + " " + device.getAddress());
+                notifyDataSetChanged();
             }
         }
 
