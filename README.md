@@ -15,7 +15,7 @@
 
     private void enableLocation()
     {
-        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);// getActivity().getSystemService(Context.LOCATION_SERVICE);
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         boolean  locationEnabled = false;
         try {
             locationEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
