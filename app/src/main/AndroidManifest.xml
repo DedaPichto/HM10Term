@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.rqd.hm10term">
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <!-- If your app targets Android 9 or lower, you can declare
+     ACCESS_COARSE_LOCATION instead. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- You must also declare the ACCESS_FINE_LOCATION permission, given that
+      LE beacons are often associated with location. Without this permission,
+      scans won't return any results. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- If you want to declare that your app is available to BLE-capable
+      devices only, include the following in your app's manifest -->
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity android:name="com.rqd.hm10term.BallActivity"></activity>
+        <activity android:name="com.rqd.hm10term.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- https://developer.android.com/guide/topics/manifest/service-element?hl=ru
+            Declares a service (a Service subclass) as one of the application's components.
+            Unlike activities, services lack a visual user interface. They're used to implement
+            long-running background operations or a rich communications API that can be called
+            by other applications.
+        -->
+        <service
+            android:name="com.rqd.hm10term.BLEService"
+            android:enabled="true" />
+    </application>
+
+</manifest>
