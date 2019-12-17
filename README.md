@@ -1,7 +1,7 @@
 # HM10Term
 Терминал HM10
 =============
- Пример терминала для отправки/приёма комманд через Bluetooth Terminal cc2541 (HM-10, BT05, e.t.c.).
+Пример терминала для отправки/приёма комманд через Bluetooth Terminal cc2541 (HM-10, BT05, e.t.c.).
 Сканируемый UUID's устройство(а) можно добавлять в BLENameResolve, в виде констант, а потом дописывать
 в фильтр.
 
@@ -10,12 +10,16 @@
 Терминал сделан для обмена данными с DYI-устройствами на основе Arduino
 
 Особенность программы -- запрашивается доступ к Location. Даже не запрашивается, а спрашивается,
- есть ли доступ? Если этого не сделать, у ряда устройств не будет доступа к поиску BLE устройств.
- За решение спасибо https://github.com/kai-morich, с его лучшим терминалом https://github.com/kai-morich/SimpleBluetoothLeTerminal
+есть ли доступ? 
+Если этого не сделать, у ряда устройств не будет доступа к поиску BLE устройств.
+
+За решение спасибо https://github.com/kai-morich, с его лучшим терминалом https://github.com/kai-morich/SimpleBluetoothLeTerminal
+
 В частности, у новых Samsung'ов и LG. (см. EnableLocation и эту дискуссию https://github.com/Polidea/RxAndroidBle/issues/106)
  * Motorola Nexus 6, Android 7.0 - не в порядке
  * LGE Nexus 5X, Android 7.0 - не в порядке
  * Samsung S9 SM-G960F - не в порядке
  и т.д.
+
 Поддерживается Android с его 4.1-4.3startLeScan()
 
