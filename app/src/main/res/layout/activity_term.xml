@@ -13,6 +13,7 @@
             style="?android:attr/progressBarStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
+
     </LinearLayout>
 
     <LinearLayout
@@ -58,13 +59,15 @@
 
         </LinearLayout>
 
-        <EditText
-            android:id="@+id/ETLog"
+        <TextView
+            android:id="@+id/TVLog"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ems="10"
-            android:gravity="start|top"
-            android:inputType="textMultiLine" />
+            android:layout_weight="10"
+            android:freezesText="true"
+            android:gravity="bottom"
+            android:scrollbars="vertical" />
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

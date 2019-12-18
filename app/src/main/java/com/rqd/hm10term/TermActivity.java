@@ -55,7 +55,7 @@ public class TermActivity extends AppCompatActivity {
     // Кнопка отправки данных
     private Button btnSend = null;
     // Лог обмена данными
-    private EditText ETLog = null;
+    private TextView TVLog = null;
     // Слой с SeekBar'ом, отображающим процесс подключения к устройству
     private LinearLayout llConnect = null;
 
@@ -96,7 +96,7 @@ public class TermActivity extends AppCompatActivity {
         tvDeviceAddress = findViewById(R.id.TVDeviceAddress);
         etSend = findViewById(R.id.ETSend);
         btnSend = findViewById(R.id.BTNSend);
-        ETLog = findViewById(R.id.ETLog);
+        TVLog = findViewById(R.id.TVLog);
         llConnect = findViewById(R.id.LLConnect);
 
         /** Отправляем команду из строки etSend
@@ -108,9 +108,9 @@ public class TermActivity extends AppCompatActivity {
                 if(strCommand != null && !strCommand.isEmpty()) {
                     if(mBluetoothLeService.sendMessage(strCommand + "\r\n")) {
                         Log.w(LOG_TAG, String.format("Send command: %s", strCommand));
-//                      Pattern p = Pattern.compile("p(\d+)");
-//                      Matcher m = p.matcher(strCommand);
-                        ETLog.append(strCommand + "\n");
+                        // TVLogappend(strCommand + "\n");
+                        strCommand += "\n";
+                        TVLog.append(strCommand, 0, strCommand.length());
                         etSend.setText("");
                     }
                 }
@@ -164,7 +164,7 @@ public class TermActivity extends AppCompatActivity {
                 // value = intent.getIntExtra(BluetoothLeService.PARAM_VALUE, -1);
                 String value = intent.getStringExtra(BLEService.PARAM_VALUE);
                 Log.w("BroadcastReceiver", "Name: " + name + ", Value: " + value);
-                ETLog.append(value + "\n");
+                TVLog.append(value + "\n");
             }
         }
     };
@@ -177,9 +177,9 @@ public class TermActivity extends AppCompatActivity {
             public void run() {
                 //Do something after 100ms
                 if(mBluetoothLeService != null) {
-                    if(mBluetoothLeService.sendMessage("gq\r\n")) {
-                        // etLog.append();
-                    }
+                    // if(mBluetoothLeService.sendMessage("gq\r\n")) {
+                        // TVLog.append();
+                    // }
                 }
             }
         }, 1000);
@@ -213,7 +213,7 @@ public class TermActivity extends AppCompatActivity {
         public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
             Log.w("Frequency: ", "progress: " + progress);
             if(mBluetoothLeService != null) {
-                mBluetoothLeService.sendMessage("sq" + progress + "\n");
+                // mBluetoothLeService.sendMessage("sq" + progress + "\n");
             }
         }
 
@@ -270,7 +270,7 @@ public class TermActivity extends AppCompatActivity {
             public void run() {
                 //Do something after 100ms
                 if(mBluetoothLeService != null) {
-                    mBluetoothLeService.sendMessage("gf\r\n");
+                    // mBluetoothLeService.sendMessage("gf\r\n");
                 }
             }
         }, 1000);
