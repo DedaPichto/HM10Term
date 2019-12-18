@@ -242,24 +242,10 @@ public class BLEService extends Service {
         {
             int flag = characteristic.getProperties();
             String strData = characteristic.getStringValue(0);
-            readBackParams(strData);
+            broadcastMessage("reply", strData);
         }
 
         sendBroadcast(intent);
-    }
-
-    /*
-     * Парсим параметры
-     */
-    private void readBackParams(String strData) {
-        // Log.w(LOG_TAG, strData + "(" + strData.length() + ")");
-        Log.w(LOG_TAG, strData);
-        String strCommands[] = strData.split("\\s+");
-        boolean bBackward = false;
-
-        for(String strCommand : strCommands) {
-            broadcastMessage("reply", strCommand);
-        }
     }
 
     public void broadcastMessage(String strAction, int param) {

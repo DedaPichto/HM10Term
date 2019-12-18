@@ -164,6 +164,7 @@ public class TermActivity extends AppCompatActivity {
                 // value = intent.getIntExtra(BluetoothLeService.PARAM_VALUE, -1);
                 String value = intent.getStringExtra(BLEService.PARAM_VALUE);
                 Log.w("BroadcastReceiver", "Name: " + name + ", Value: " + value);
+                ETLog.append(value + "\n");
             }
         }
     };
