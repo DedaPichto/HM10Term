@@ -18,12 +18,15 @@ import android.util.Log;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by denis on 25.03.18.
  */
 
 public class BLEService extends Service {
+    private List<String> filters;
     private String LOG_TAG = BLEService.class.getName();
 
     private String mBluetoothDeviceAddress;
@@ -139,7 +142,9 @@ public class BLEService extends Service {
                                 descriptor.setValue( BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
                                 descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                                 gatt.writeDescriptor(descriptor);
-                                Log.w("HM-10 Descriptor", descriptor.getUuid().toString() + " " + BLENameResolver.lookupDescriptor(descriptor.getUuid().toString(), "Не опознан"));
+                                Log.w("HM-10 Descriptor", descriptor.getUuid().toString() +
+                                        " " + BLENameResolver.lookupDescriptor(descriptor.getUuid().toString(),
+                                        "Не опознан"));
                             }
                             gatt.setCharacteristicNotification(characteristic, true);
                         }
@@ -209,7 +214,7 @@ public class BLEService extends Service {
         Log.d(LOG_TAG, "Trying to create a new connection.");
         mBluetoothDeviceAddress = address;
         mConnectionState = STATE_CONNECTING;
-        broadcastMessage("connected", 1);
+        // broadcastMessage("connected", 1);
         return true;
     }
 
@@ -225,7 +230,7 @@ public class BLEService extends Service {
             return;
         }
         mBluetoothGatt.disconnect();
-        broadcastMessage("connected", 0);
+        // broadcastMessage("connected", 0);
     }
 
     private void broadcastUpdate(final String action) {
@@ -241,8 +246,18 @@ public class BLEService extends Service {
         if(characteristic.getUuid().equals(UUID.fromString(BLENameResolver.CHARACTERISTIC_HM10_RXTX)))
         {
             int flag = characteristic.getProperties();
-            String strData = characteristic.getStringValue(0);
-            broadcastMessage("reply", strData);
+            String message = characteristic.getStringValue(0).trim();
+            String[] messages = message.split("\\s+");
+            for(String msg : messages) {
+                /*
+                Pattern p = Pattern.compile("p\\d+$", Pattern.CASE_INSENSITIVE);
+                Matcher m = p.matcher(msg);
+                if(!m.matches()){
+
+                 */
+                    broadcastMessage("reply", msg.trim());
+                //}
+            }
         }
 
         sendBroadcast(intent);
