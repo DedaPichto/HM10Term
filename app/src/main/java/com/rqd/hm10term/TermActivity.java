@@ -135,7 +135,7 @@ public class TermActivity extends AppCompatActivity {
                 mConnected = true;
                 updateConnectionState();
                 invalidateOptionsMenu();
-                Log.w(LOG_TAG, "Connected to " + mDeviceAddress );
+                Log.w(LOG_TAG, "Подключаемся к " + mDeviceAddress );
                 etSend.setEnabled(true);
                 btnSend.setEnabled(true);
                 llConnect.setVisibility(View.INVISIBLE);
@@ -151,39 +151,19 @@ public class TermActivity extends AppCompatActivity {
                 // displayGattServices(mBluetoothLeService.getSupportedGattServices());
                 // getParams();
                 Log.w(LOG_TAG, "Сервисы прочитаны");
-                requestCurrentActions();
             } else if (BLEService.ACTION_DATA_AVAILABLE.equals(action)) {
                 // Log.w(LOG_TAG"DATA_AVAILABLE " + intent.getStringExtra(com.rqd.denis.ballrqd.BluetoothLeService.EXTRA_DATA));
                 // displayData(intent.getStringExtra(com.rqd.denis.ballrqd.BluetoothLeService.EXTRA_DATA));
 
             } else if (BLEService.EXTRA_DATA.equals(action))
             {
-                // Log.w(LOG_TAG"EXTRA_DATA");
                 String name = intent.getStringExtra(BLEService.PARAM_NAME);
-                // int value = -1;
-                // value = intent.getIntExtra(BluetoothLeService.PARAM_VALUE, -1);
                 String value = intent.getStringExtra(BLEService.PARAM_VALUE);
-                Log.w("BroadcastReceiver", "Name: " + name + ", Value: " + value);
+                Log.w(LOG_TAG, String.format("Name: %s value %s", name, value));
                 TVLog.append(value + "\n");
             }
         }
     };
-
-
-    public void sendRequest(View view) {
-        final Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                //Do something after 100ms
-                if(mBluetoothLeService != null) {
-                    // if(mBluetoothLeService.sendMessage("gq\r\n")) {
-                        // TVLog.append();
-                    // }
-                }
-            }
-        }, 1000);
-    }
 
     /*
      *
@@ -228,18 +208,6 @@ public class TermActivity extends AppCompatActivity {
         }
     };
 
-
-    private void changeBtnState() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if(mEnabled) {
-                } else {
-                }
-            }
-        });
-    }
-
     /*
      *   Запрашиваем нужные разрешения для работы BLE-Сканнера
      */
@@ -261,22 +229,6 @@ public class TermActivity extends AppCompatActivity {
     }
 
     /*
-     * Запрашиваем у шарика текущие состояния переменных
-     */
-    public void requestCurrentActions() {
-        final Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                //Do something after 100ms
-                if(mBluetoothLeService != null) {
-                    // mBluetoothLeService.sendMessage("gf\r\n");
-                }
-            }
-        }, 1000);
-    }
-
-    /*
      * Устанавливаем фильтр
      */
     private static IntentFilter makeGattUpdateIntentFilter() {
@@ -288,49 +240,6 @@ public class TermActivity extends AppCompatActivity {
         intentFilter.addAction(BLEService.ACTION_FILL);
         intentFilter.addAction(BLEService.EXTRA_DATA);
         return intentFilter;
-    }
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_term);
-        // Запрашиваем нужные разрешения доступа к BLUETOOTH и Геопозиционированию
-        checkPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
-        checkPermission(Manifest.permission.BLUETOOTH);
-        checkPermission(Manifest.permission.BLUETOOTH_ADMIN);
-        initGlobalVariables();
-        Intent gattServiceIntent = new Intent(this, BLEService.class);
-        bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
-    }
-
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        // Запрашиваем нужные разрешения доступа к BLUETOOTH и Геопозиционированию
-        checkPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
-        checkPermission(Manifest.permission.BLUETOOTH);
-        checkPermission(Manifest.permission.BLUETOOTH_ADMIN);
-
-        Intent intent = registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
-        if (mBluetoothLeService != null) {
-            final boolean result = mBluetoothLeService.connect(mDeviceAddress);
-            Log.d(LOG_TAG, "Connect request result=" + result);
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        unregisterReceiver(mGattUpdateReceiver);
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        unbindService(mServiceConnection);
-        mBluetoothLeService = null;
     }
 
     @Override
@@ -377,5 +286,49 @@ public class TermActivity extends AppCompatActivity {
                 return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Запрашиваем нужные разрешения доступа к BLUETOOTH и Геопозиционированию
+        checkPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
+        checkPermission(Manifest.permission.BLUETOOTH);
+        checkPermission(Manifest.permission.BLUETOOTH_ADMIN);
+
+        Intent intent = registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+        if (mBluetoothLeService != null) {
+            final boolean result = mBluetoothLeService.connect(mDeviceAddress);
+            Log.d(LOG_TAG, "Connect request result=" + result);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(mGattUpdateReceiver);
+    }
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Log.w(LOG_TAG, "Create");
+        setContentView(R.layout.activity_term);
+        // Запрашиваем нужные разрешения доступа к BLUETOOTH и Геопозиционированию
+        checkPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
+        checkPermission(Manifest.permission.BLUETOOTH);
+        checkPermission(Manifest.permission.BLUETOOTH_ADMIN);
+        initGlobalVariables();
+        Intent gattServiceIntent = new Intent(this, BLEService.class);
+        bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unbindService(mServiceConnection);
+        mBluetoothLeService = null;
     }
 }
