@@ -249,14 +249,18 @@ public class BLEService extends Service {
             String message = characteristic.getStringValue(0).trim();
             String[] messages = message.split("\\s+");
             for(String msg : messages) {
-                /*
-                Pattern p = Pattern.compile("p\\d+$", Pattern.CASE_INSENSITIVE);
-                Matcher m = p.matcher(msg);
-                if(!m.matches()){
-
-                 */
+                if(filters == null) {
                     broadcastMessage("reply", msg.trim());
-                //}
+                } else {
+                    for(String filter : filters) {
+                        // for ex "p\d+$"
+                        Pattern p = Pattern.compile(filter, Pattern.CASE_INSENSITIVE);
+                        Matcher m = p.matcher(msg);
+                        if (!m.matches()) {
+                            broadcastMessage("reply", msg.trim());
+                        }
+                    }
+                }
             }
         }
 
