@@ -35,28 +35,42 @@ public class BLEService extends Service {
     private BluetoothManager mBluetoothManager;
     BluetoothGattCharacteristic mHM10characteristicRXTX;
 
+    public final static int STATE_DISCONNECTED = 0;
+    public final static int STATE_CONNECTING = -1;
+    public final static int STATE_CONNECTED = -2;
+    public final static int STATE_CONNECTED_AND_READY = -3; // indicates that services were discovered
+    public final static int STATE_DISCONNECTING = -4;
+    public final static int STATE_CLOSED = -5;
     private int mConnectionState = STATE_DISCONNECTED;
 
-    private static final int STATE_DISCONNECTED = 0;
-    private static final int STATE_CONNECTING = 1;
-    private static final int STATE_CONNECTED = 2;
-
     public final static String ACTION_GATT_CONNECTED =
-            "com.rqd.denis.ball.ACTION_GATT_CONNECTED";
+            "com.rqd.electrycat.ACTION_GATT_CONNECTED";
+    public final static String ACTION_GATT_CONNECTING =
+            "com.rqd.electrycat.ACTION_GATT_CONNECTING";
     public final static String ACTION_GATT_DISCONNECTED =
-            "com.rqd.denis.ball.ACTION_GATT_DISCONNECTED";
+            "com.rqd.electrycat.ACTION_GATT_DISCONNECTED";
+    public final static String ACTION_GATT_DISCONNECTING =
+            "com.rqd.electrycat.ACTION_GATT_DISCONNECTING";
     public final static String ACTION_GATT_SERVICES_DISCOVERED =
-            "com.rqd.denis.ball.ACTION_GATT_SERVICES_DISCOVERED";
+            "com.rqd.electrycat.ACTION_GATT_SERVICES_DISCOVERED";
     public final static String ACTION_DATA_AVAILABLE =
-            "com.rqd.denis.ball.ACTION_DATA_AVAILABLE";
+            "com.rqd.electrycat.ACTION_DATA_AVAILABLE";
+    public final static String ACTION_GET_STATE =
+            "com.rqd.electrycat.ACTION_GET_STATE";
+    public final static String ACTION_GET_FREQUENCY =
+            "com.rqd.electrycat.ACTION_GET_FREQUENCY";
+    public final static String ACTION_GET_FILL =
+            "com.rqd.electrycat.ACTION_GET_FILL";
+    public final static String ACTION_GET_CHARGE =
+            "com.rqd.electrycat.ACTION_GET_CHARGE";
+    public final static String ACTION_GET_SLEEP =
+            "com.rqd.electrycat.ACTION_GET_SLEEP";
     public final static String EXTRA_DATA =
-            "com.rqd.denis.ball.EXTRA_DATA";
-    public final static String ACTION_FILL =
-            "com.rqd.denis.ball.ACTION_FILL";
+            "com.rqd.electrycat.EXTRA_DATA";
     public final static String PARAM_NAME =
-            "com.rqd.denis.ball.PARAM_NAME";
+            "com.rqd.electrycat.PARAM_NAME";
     public final static String PARAM_VALUE =
-            "com.rqd.denis.ball.PARAM_VALUE";
+            "com.rqd.electrycat.PARAM_VALUE";
 
     public class LocalBinder extends Binder {
         BLEService getService() {
@@ -121,21 +135,37 @@ public class BLEService extends Service {
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            String intentAction;
-            if (newState == BluetoothProfile.STATE_CONNECTED) {
-                intentAction = ACTION_GATT_CONNECTED;
-                mConnectionState = STATE_CONNECTED;
-                broadcastUpdate(intentAction);
-                Log.w(LOG_TAG, "Connected to GATT server.");
-                // Attempts to discover services after successful connection.
-                Log.w(LOG_TAG, "Attempting to start service discovery:" +
-                        mBluetoothGatt.discoverServices());
-            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                intentAction = ACTION_GATT_DISCONNECTED;
-                mConnectionState = STATE_DISCONNECTED;
-                Log.w(LOG_TAG, "Disconnected from GATT server.");
-                broadcastUpdate(intentAction);
+            super.onConnectionStateChange(gatt, status, newState);
+            String intentAction = "Unknown Action";
+            switch (newState) {
+                case BluetoothProfile.STATE_CONNECTED:
+                    Log.w(LOG_TAG, "STATE_CONNECTED");
+                    mConnectionState = STATE_CONNECTED;
+                    intentAction = ACTION_GATT_CONNECTED;
+                    if(!mBluetoothGatt.discoverServices()) {
+                        Log.w(LOG_TAG, String.format("Error Discover Service"));
+                    }
+                    break;
+                case BluetoothProfile.STATE_CONNECTING:
+                    Log.w(LOG_TAG, "STATE_CONNECTING");
+                    mConnectionState = STATE_CONNECTING;
+                    intentAction = ACTION_GATT_CONNECTING;
+                    break;
+                case BluetoothProfile.STATE_DISCONNECTED:
+                    Log.w(LOG_TAG, "STATE_DISCONNECTED");
+                    mConnectionState = STATE_DISCONNECTED;
+                    intentAction = ACTION_GATT_DISCONNECTED;
+                    break;
+                case BluetoothProfile.STATE_DISCONNECTING:
+                    Log.w(LOG_TAG, "STATE_DISCONNECTING");
+                    mConnectionState = STATE_DISCONNECTING;
+                    intentAction = ACTION_GATT_DISCONNECTING;
+                    break;
+                default:
+                    Log.w(LOG_TAG, "Unknown State");
+                    break;
             }
+            broadcastUpdate(intentAction);
         }
 
         @Override

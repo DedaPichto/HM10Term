@@ -237,7 +237,6 @@ public class TermActivity extends AppCompatActivity {
         intentFilter.addAction(BLEService.ACTION_GATT_DISCONNECTED);
         intentFilter.addAction(BLEService.ACTION_GATT_SERVICES_DISCOVERED);
         intentFilter.addAction(BLEService.ACTION_DATA_AVAILABLE);
-        intentFilter.addAction(BLEService.ACTION_FILL);
         intentFilter.addAction(BLEService.EXTRA_DATA);
         return intentFilter;
     }
