@@ -71,6 +71,51 @@ public class BLEService extends Service {
         return mBinder;
     }
 
+    /**
+     * Enables or disables notification on a give characteristic.
+     * https://stackoverflow.com/questions/17910322/android-ble-api-gatt-notification-not-received
+     *
+     * @param characteristic Characteristic to act on.
+     * @param enabled If true, enable notification.  False otherwise.
+     */
+    public void setCharacteristicNotification(
+            BluetoothGatt gatt,
+            BluetoothGattDescriptor descriptor,
+            BluetoothGattCharacteristic characteristic,
+            boolean enabled) {
+        if(gatt != null && descriptor != null && characteristic != null) {
+            int readProperties = characteristic.getProperties();
+            if ((readProperties & mHM10characteristicRXTX.PROPERTY_INDICATE) != 0) {
+                descriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+            } else if ((readProperties & mHM10characteristicRXTX.PROPERTY_NOTIFY) != 0) {
+                descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            }
+            gatt.writeDescriptor(descriptor);
+        }
+    }
+
+    /** Регистрируем уведомления сервисов HM-10
+     * https://stackoverflow.com/questions/25865587/android-4-3-bluetooth-ble-dont-called-oncharacteristicread/25866874
+     */
+    protected void registerHM10ServicesNotifications(BluetoothGatt gatt) {
+        BluetoothGattService serviceHM10 = gatt.getService(UUID.fromString(BLENameResolver.SERVICE_HM10));
+        if(serviceHM10 != null) {
+            mHM10characteristicRXTX = serviceHM10.getCharacteristic(UUID.fromString(BLENameResolver.CHARACTERISTIC_HM10_RXTX));
+            if(mHM10characteristicRXTX != null) {
+
+                BluetoothGattDescriptor descriptorConfig =
+                        mHM10characteristicRXTX.getDescriptor(UUID.fromString(BLENameResolver.DESCRIPTOR_HM10_CLIENT_CONFIG));
+                setCharacteristicNotification(gatt, descriptorConfig, mHM10characteristicRXTX, true);
+
+                BluetoothGattDescriptor descriptorUser =
+                        mHM10characteristicRXTX.getDescriptor(UUID.fromString(BLENameResolver.DESCRIPTOR_HM10_USER_DESCRIPTION));
+                setCharacteristicNotification(gatt, descriptorUser, mHM10characteristicRXTX, true);
+
+                gatt.setCharacteristicNotification(mHM10characteristicRXTX, true);
+            }
+        }
+    }
+
     // Implements callback methods for GATT events that the app cares about.  For example,
     // connection change and services discovered.
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
@@ -96,57 +141,29 @@ public class BLEService extends Service {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                BluetoothGattService serviceHM10 = gatt.getService(UUID.fromString(BLENameResolver.SERVICE_HM10));
-                if(serviceHM10 != null) {
-                    mHM10characteristicRXTX = serviceHM10.getCharacteristic(UUID.fromString(BLENameResolver.CHARACTERISTIC_HM10_RXTX));
-                    if(mHM10characteristicRXTX != null) {
-                        BluetoothGattDescriptor descriptorConfig =
-                                mHM10characteristicRXTX.getDescriptor(UUID.fromString(BLENameResolver.DESCRIPTOR_HM10_CLIENT_CONFIG));
-                        if(descriptorConfig != null) {
-                            descriptorConfig.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
-                            gatt.writeDescriptor(descriptorConfig);
-                        }
-                        BluetoothGattDescriptor descriptorUser =
-                                mHM10characteristicRXTX.getDescriptor(UUID.fromString(BLENameResolver.DESCRIPTOR_HM10_USER_DESCRIPTION));
-                        if(descriptorUser != null) {
-                            descriptorUser.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
-                            gatt.writeDescriptor(descriptorUser);
-                        }
-                        gatt.setCharacteristicNotification(mHM10characteristicRXTX, true);
-                    }
-                }
-                broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
+                // broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
                 // https://stackoverflow.com/questions/24990061/android-ble-notifications-for-glucose
             } else {
                 Log.w(LOG_TAG, "onServicesDiscovered received: " + status);
             }
-            registerNotifications(gatt);
+            registerHM10ServicesNotifications(gatt);
             Log.w(LOG_TAG, "BluetothLeService().onServicesDiscovered()");
         }
 
-        /*
-         * Регистрируем уведомления на нужные сервисы HM-10
-         */
-        protected void registerNotifications(BluetoothGatt gatt)
-        {
-            List<BluetoothGattService> services = gatt.getServices();
-            for (BluetoothGattService service : services)
-            {
-                if(service.getUuid().equals(UUID.fromString(BLENameResolver.SERVICE_HM10))) {
-                    Log.w("HM-10 Service", service.getUuid().toString() + " " + BLENameResolver.lookupService(service.getUuid().toString(), "Не опознан"));
-                    List<BluetoothGattCharacteristic> characteristics = service.getCharacteristics();
-                    for (BluetoothGattCharacteristic characteristic : characteristics) {
-                        if(characteristic.getUuid().equals(UUID.fromString(BLENameResolver.CHARACTERISTIC_HM10_RXTX))) {
-                            Log.w("HM-10 Characteristic", characteristic.getUuid().toString() + " " + BLENameResolver.lookupCharacteristic(characteristic.getUuid().toString(), "Не опознана"));
-                            for (BluetoothGattDescriptor descriptor : characteristic.getDescriptors()) {
-                                descriptor.setValue( BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
-                                descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                                gatt.writeDescriptor(descriptor);
-                                Log.w("HM-10 Descriptor", descriptor.getUuid().toString() +
-                                        " " + BLENameResolver.lookupDescriptor(descriptor.getUuid().toString(),
-                                        "Не опознан"));
-                            }
-                            gatt.setCharacteristicNotification(characteristic, true);
+        private void parseMessage(String message) {
+            final Intent intent = new Intent(ACTION_DATA_AVAILABLE);
+            String[] messages = message.trim().split("\\s+");
+            for(String msg : messages) {
+                if(filters == null) {
+                    broadcastMessage("reply", msg.trim());
+                } else {
+                    for(String filter : filters) {
+                        // for ex "p\d+$"
+                        Pattern p = Pattern.compile(filter, Pattern.CASE_INSENSITIVE);
+                        Matcher m = p.matcher(msg);
+                        if (!m.matches()) {
+                            broadcastMessage("reply", msg.trim());
+                            sendBroadcast(intent);
                         }
                     }
                 }
@@ -157,9 +174,11 @@ public class BLEService extends Service {
         public void onCharacteristicRead(BluetoothGatt gatt,
                                          BluetoothGattCharacteristic characteristic,
                                          int status) {
+            // super.onCharacteristicRead(gatt, characteristic, status);
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                Log.w(LOG_TAG, "onCharacteristicRead()" + characteristic.getStringValue(0));
-                broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+                int flag = characteristic.getProperties();
+                Log.w("onCharacteristicRead()", String.format("Read message %s", characteristic.getStringValue(0).toString()));
+                // parseMessage(characteristic.getStringValue(0));
             } else
             {
                 Log.w(LOG_TAG, "Error (onCharacteristicRead()): " + status);
@@ -169,8 +188,12 @@ public class BLEService extends Service {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
-            // Log.w(LOG_TAG, "onCharacteristicChanged()");
-            broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+            // https://stackoverflow.com/questions/36659340/android-ble-oncharacteristicread-and-oncharacteristicchanged-never-called
+            Log.w("onCharacteristicChanged", String.format("value = %s", characteristic.getStringValue(0)));
+            super.onCharacteristicChanged(gatt, characteristic);
+            gatt.readCharacteristic(characteristic);
+            int flag = characteristic.getProperties();
+            parseMessage(characteristic.getStringValue(0));
         }
     };
 
@@ -235,35 +258,6 @@ public class BLEService extends Service {
 
     private void broadcastUpdate(final String action) {
         final Intent intent = new Intent(action);
-        sendBroadcast(intent);
-    }
-
-    private void broadcastUpdate(final String action,
-                                 final BluetoothGattCharacteristic characteristic) {
-        final Intent intent = new Intent(action);
-
-        // Log.w("broadcastUpdate()", BLEServiceNameResolver.lookupCharacteristic(characteristic.getUuid().toString(), "Не найдена характеристика"));
-        if(characteristic.getUuid().equals(UUID.fromString(BLENameResolver.CHARACTERISTIC_HM10_RXTX)))
-        {
-            int flag = characteristic.getProperties();
-            String message = characteristic.getStringValue(0).trim();
-            String[] messages = message.split("\\s+");
-            for(String msg : messages) {
-                if(filters == null) {
-                    broadcastMessage("reply", msg.trim());
-                } else {
-                    for(String filter : filters) {
-                        // for ex "p\d+$"
-                        Pattern p = Pattern.compile(filter, Pattern.CASE_INSENSITIVE);
-                        Matcher m = p.matcher(msg);
-                        if (!m.matches()) {
-                            broadcastMessage("reply", msg.trim());
-                        }
-                    }
-                }
-            }
-        }
-
         sendBroadcast(intent);
     }
 
